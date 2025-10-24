@@ -1,0 +1,13 @@
+# Environment files (contains secrets)
+.env
+
+# Docker volumes
+postgres_data/
+n8n_data/
+
+# Build artifacts
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

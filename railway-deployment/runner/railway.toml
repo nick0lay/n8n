@@ -1,0 +1,81 @@
+# Railway Configuration for n8n Task Runners Service
+#
+# This service builds a custom Docker image with dynamic dependencies.
+# Railway automatically passes environment variables as Docker build arguments
+# when they match ARG declarations in the Dockerfile.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "railway-deployment/runner/Dockerfile"
+
+[deploy]
+numReplicas = 1
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# ============================================================================
+# IMPORTANT: How to Set Build Arguments in Railway
+# ============================================================================
+#
+# Railway does NOT support [build.buildArgs] in railway.toml.
+# Instead, set these as environment variables in Railway Dashboard:
+#
+# BUILD-TIME Variables (passed as --build-arg to Docker):
+# --------------------------------------------------------
+#   N8N_VERSION = latest
+#   JS_PACKAGES = moment@2.30.1,axios@^1.7.0,lodash@^4.17.21
+#   PY_PACKAGES = requests==2.31.0,python-dateutil==2.8.2
+#
+# How it works:
+#   1. Your Dockerfile has: ARG JS_PACKAGES
+#   2. You set in Railway Dashboard: JS_PACKAGES=moment@2.30.1,...
+#   3. Railway automatically runs: docker build --build-arg JS_PACKAGES="moment@2.30.1,..."
+#
+# RUNTIME Variables (used by running container):
+# -----------------------------------------------
+#   N8N_RUNNERS_TASK_BROKER_URI = http://n8n.railway.internal:5679
+#   N8N_RUNNERS_AUTH_TOKEN = <secure-token>
+#
+#   # JavaScript Allow-Lists
+#   JS_ALLOW_LIST = moment,axios,lodash
+#   NODE_FUNCTION_ALLOW_BUILTIN = crypto,fs,path
+#   NODE_FUNCTION_ALLOW_EXTERNAL = ${{JS_ALLOW_LIST}}
+#
+#   ⚠️ CRITICAL: NODE_FUNCTION_ALLOW_EXTERNAL must be an explicit list, NOT "*"
+#   Using wildcard (*) will break moment.js and other libraries that modify prototypes.
+#   See: railway-deployment/docs/TROUBLESHOOTING.md for details.
+#
+#   # Python Allow-Lists
+#   PY_ALLOW_LIST = requests,dateutil
+#   PY_STDLIB_ALLOW = json,datetime,math,random
+#   N8N_RUNNERS_EXTERNAL_ALLOW = ${{PY_ALLOW_LIST}}
+#   N8N_RUNNERS_STDLIB_ALLOW = ${{PY_STDLIB_ALLOW}}
+#
+#   # Performance
+#   N8N_RUNNERS_MAX_CONCURRENCY = 5
+#   N8N_RUNNERS_TASK_TIMEOUT = 60
+#   N8N_RUNNERS_LAUNCHER_LOG_LEVEL = info
+#
+#   # Timezone
+#   GENERIC_TIMEZONE = America/New_York
+#
+# See README.md and .env.example for complete documentation.
+#
+# ============================================================================
+# CRITICAL: Two-Variable System
+# ============================================================================
+#
+# You must configure dependencies in TWO places:
+#
+# 1. BUILD-TIME (Railway Dashboard env vars - with versions):
+#    JS_PACKAGES = "moment@2.30.1,axios@^1.7.0"
+#    PY_PACKAGES = "requests==2.31.0,python-dateutil==2.8.2"
+#    → These INSTALL the packages into the Docker image
+#
+# 2. RUNTIME (Railway Dashboard env vars - without versions):
+#    JS_ALLOW_LIST = moment,axios
+#    PY_ALLOW_LIST = requests,dateutil
+#    → These ENABLE the packages for use in Code nodes
+#
+# Package names must match between build and runtime.
+# Note: python-dateutil installs as 'python-dateutil' but imports as 'dateutil'

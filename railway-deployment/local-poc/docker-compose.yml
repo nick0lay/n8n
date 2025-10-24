@@ -1,0 +1,144 @@
+# n8n with Custom Task Runners - Local POC
+# This docker-compose file is for LOCAL TESTING with dynamic dependency management
+#
+# Quick Start:
+#   1. cp .env.example .env
+#   2. Edit .env with your dependencies
+#   3. docker-compose build
+#   4. docker-compose up -d
+#   5. open http://localhost:5678
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PostgreSQL Database
+  # ============================================================================
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeInProduction}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U n8n']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # n8n Main Instance (Official Image)
+  # ============================================================================
+  n8n:
+    image: ghcr.io/n8n-io/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Database Configuration
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD:-ChangeMeInProduction}
+
+      # n8n Basic Configuration
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-ChangeMeToASecureRandomString32Chars}
+
+      # Task Runners Configuration (EXTERNAL MODE)
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_RUNNERS_MODE=external
+      - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+      - N8N_RUNNERS_BROKER_PORT=5679
+      - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN:-ChangeMeToASecureToken}
+
+      # Enable Python Runner
+      - N8N_NATIVE_PYTHON_RUNNER=true
+
+      # Logging
+      - N8N_LOG_LEVEL=info
+
+      # Timezone
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/New_York}
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:5678/healthz || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ============================================================================
+  # Custom Task Runners (Built with Dynamic Dependencies)
+  # ============================================================================
+  runners:
+    build:
+      context: .
+      dockerfile: Dockerfile.runners
+      args:
+        # These build args come from .env file
+        N8N_VERSION: ${N8N_VERSION:-latest}
+        JS_PACKAGES: ${JS_PACKAGES:-moment@2.30.1,axios@^1.7.0,lodash@^4.17.21}
+        PY_PACKAGES: ${PY_PACKAGES:-requests==2.31.0,python-dateutil==2.8.2}
+    image: n8n-runners:custom
+    restart: unless-stopped
+    environment:
+      # Connection to n8n Task Broker
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:5679
+      - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN:-ChangeMeToASecureToken}
+
+      # Launcher Configuration
+      - N8N_RUNNERS_LAUNCHER_LOG_LEVEL=info
+
+      # Performance Tuning
+      - N8N_RUNNERS_MAX_CONCURRENCY=${N8N_RUNNERS_MAX_CONCURRENCY:-5}
+      - N8N_RUNNERS_TASK_TIMEOUT=${N8N_RUNNERS_TASK_TIMEOUT:-60}
+
+      # Timezone
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/New_York}
+
+      # Package Allow-Lists (REQUIRED - package names only, no versions)
+      # These tell the runner which packages are allowed to be used in Code nodes
+      # IMPORTANT: Must match the package names from JS_PACKAGES and PY_PACKAGES build args
+      - NODE_FUNCTION_ALLOW_BUILTIN="*"
+      - NODE_FUNCTION_ALLOW_EXTERNAL=${JS_ALLOW_LIST:-moment,axios,lodash}
+      - N8N_RUNNERS_EXTERNAL_ALLOW=${PY_ALLOW_LIST:-requests,dateutil}
+      - N8N_RUNNERS_STDLIB_ALLOW=${PY_STDLIB_ALLOW:-"*"}
+
+    networks:
+      - n8n-network
+    depends_on:
+      n8n:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget --spider -q http://localhost:5680/healthz || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  n8n-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  n8n_data:
+    driver: local
