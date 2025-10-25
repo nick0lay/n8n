@@ -35,19 +35,11 @@ You can inspect the last few lines of the build log file to check for errors:
 tail -n 20 build.log
 ```
 
-### Development Server
-- `pnpm dev` - Start full-stack development (excludes design-system, chat, task-runner)
-- `pnpm dev:be` - Backend only (excludes frontend editor)
-- `pnpm dev:fe` - Frontend only (includes design-system and editor-ui)
-- `pnpm dev:ai` - AI/LangChain development (nodes-langchain, n8n, n8n-core)
-- `pnpm start` - Start n8n CLI (production mode)
-
 ### Testing
 - `pnpm test` - Run all tests
 - `pnpm test:affected` - Runs tests based on what has changed since the last
   commit
 - `pnpm dev:e2e` - E2E tests in development mode
-- `pnpm test:with:docker` - Run Playwright container tests
 
 Running a particular test file requires going to the directory of that test
 and running: `pnpm test <test-file>`.
@@ -79,13 +71,12 @@ The monorepo is organized into these key packages:
 - **`packages/workflow`**: Core workflow interfaces and types
 - **`packages/core`**: Workflow execution engine
 - **`packages/cli`**: Express server, REST API, and CLI commands
-- **`packages/frontend/editor-ui`**: Vue 3 frontend application
+- **`packages/editor-ui`**: Vue 3 frontend application
 - **`packages/@n8n/i18n`**: Internationalization for UI text
 - **`packages/nodes-base`**: Built-in nodes for integrations
 - **`packages/@n8n/nodes-langchain`**: AI/LangChain nodes
-- **`packages/frontend/@n8n/design-system`**: Vue component library for UI consistency
-- **`packages/@n8n/config`**: Centralized configuration management
-- **`packages/node-dev`**: CLI tool for creating custom nodes
+- **`@n8n/design-system`**: Vue component library for UI consistency
+- **`@n8n/config`**: Centralized configuration management
 
 ## Technology Stack
 
@@ -130,7 +121,7 @@ The monorepo is organized into these key packages:
 - **Use CSS variables directly** - never hardcode spacing as px values
 - **data-test-id must be a single value** (no spaces or multiple values)
 
-When implementing CSS, refer to `packages/frontend/CLAUDE.md` for guidelines on
+When implementing CSS, refer to @packages/frontend/CLAUDE.md for guidelines on
 CSS variables and styling conventions.
 
 ### Testing Guidelines
@@ -152,20 +143,11 @@ What we use for testing and writing tests:
 When implementing features:
 1. Define API types in `packages/@n8n/api-types`
 2. Implement backend logic in `packages/cli` module, follow
-   `scripts/backend-module/backend-module-guide.md`
+   `@packages/cli/scripts/backend-module/backend-module.guide.md`
 3. Add API endpoints via controllers
-4. Update frontend in `packages/frontend/editor-ui` with i18n support
+4. Update frontend in `packages/editor-ui` with i18n support
 5. Write tests with proper mocks
 6. Run `pnpm typecheck` to verify types
-
-### Creating Backend Modules
-To scaffold a new backend module:
-```bash
-pnpm setup-backend-module
-```
-This creates a module template at `packages/cli/src/modules/my-feature`.
-Follow the guide at `scripts/backend-module/backend-module-guide.md` for
-detailed instructions on module structure, decorators, and patterns.
 
 ## Github Guidelines
 - When creating a PR, use the conventions in
