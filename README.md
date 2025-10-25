@@ -31,6 +31,14 @@ docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n docker.n
 
 Access the editor at http://localhost:5678
 
+## Deploy on Railway
+
+Deploy n8n with custom task runners on Railway. Task runners execute user code in isolated containers, supporting JavaScript and Python with custom dependencies.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/GDqhus?referralCode=CG2P3Y&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+**What are task runners?** [Learn more](https://docs.n8n.io/hosting/configuration/task-runners/)
+
 ## Resources
 
 - 📚 [Documentation](https://docs.n8n.io)
