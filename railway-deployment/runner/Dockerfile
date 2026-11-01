@@ -51,7 +51,7 @@ RUN echo "Installing JavaScript packages: ${JS_PACKAGES}" && \
         '{name: $name, description: $desc, private: true, dependencies: $deps}' \
       > package.json && \
       cat package.json && \
-      corepack enable pnpm && \
+      npm install -g pnpm@10 && \
       pnpm install --prod --no-lockfile; \
     else \
       echo '{"name": "task-runner-runtime-extras", "description": "No custom dependencies", "private": true, "dependencies": {}}' > package.json && \
