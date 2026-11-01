@@ -35,7 +35,11 @@ Access the editor at http://localhost:5678
 
 Deploy n8n with custom task runners on Railway. Task runners execute user code in isolated containers, supporting JavaScript and Python with custom dependencies.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/GDqhus?referralCode=CG2P3Y&utm_medium=integration&utm_source=template&utm_campaign=generic)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/n8n-with-code-runner?referralCode=CG2P3Y&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
+Already running n8n and only need the task runner? Deploy it on its own:
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/n8n-task-runner-only?referralCode=CG2P3Y&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 **What are task runners?** [Learn more](https://docs.n8n.io/hosting/configuration/task-runners/)
 
